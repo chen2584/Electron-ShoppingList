@@ -2,7 +2,7 @@ const electron = require('electron');
 const url = require('url');
 const path = require('path');
 
-const {app, BrowserWindow, Menu} = electron;
+const {app, BrowserWindow, Menu, ipcMain} = electron;
 
 let mainWindow;
 let addWindow;
@@ -49,6 +49,13 @@ function createAddWindow() {
 
 }
 
+// Catch item:add
+ipcMain.on('item:add', function(e, item) {
+    console.log(item);
+    mainWindow.webContents.send('item:add', item); //ส่งต่อไปยัง mainWindow.html ไปรับเอา
+    addWindow.close();
+});
+
 //Create Menu Template
 const mainMenuTemplate = [
     {
@@ -59,7 +66,6 @@ const mainMenuTemplate = [
                 click() {
                     createAddWindow();
                 }
-
             },
             {
                 label: 'Clear Item',
@@ -76,7 +82,6 @@ const mainMenuTemplate = [
 
 ];
 
-
 if(process.platform === 'darwin') { //core macOS
     mainMenuTemplate.unshift({
         label: app.getName(),
@@ -90,6 +95,25 @@ if(process.platform === 'darwin') { //core macOS
           {role: 'unhide'},
           {type: 'separator'},
           {role: 'quit'}
+        ]
+    });
+}
+
+// Add Dev Tools Item if not production
+if(process.env.NODE_ENV !== 'production') {
+    mainMenuTemplate.push({
+        label: 'Developer Tools',
+        submenu: [
+            {
+                label: 'Toggle DevTools',
+                accelerator: 'CmdOrCtrl+I',
+                click(item, focusedWindow) {
+                    focusedWindow.toggleDevTools();
+                }
+            },
+            {
+                role: 'reload'
+            }
         ]
     });
 }
